@@ -1,4 +1,4 @@
-FROM debian:booster
+FROM debian:10
 MAINTAINER V.Slugin <vslugin@nntc.nnov.ru>
 WORKDIR /srv
 

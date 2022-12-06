@@ -1,16 +1,17 @@
-version: '3.9'
+version: '3.3'
 
 services:
   srv:
     build: ./server
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: root
+      QWE: "rty123"
     ports:
-      - "3306:3306"
+      - "8888:80"
     networks:
       - infrastructure
+    volumes:
+      - ../app:/srv
 
 networks:
   infrastructure:
-    name: infrastructure
