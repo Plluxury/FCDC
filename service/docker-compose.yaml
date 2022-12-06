@@ -1,0 +1,16 @@
+version: '3.9'
+
+services:
+  srv:
+    build: ./server
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3306:3306"
+    networks:
+      - infrastructure
+
+networks:
+  infrastructure:
+    name: infrastructure

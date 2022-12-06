@@ -1,0 +1,12 @@
+FROM debian:booster
+MAINTAINER V.Slugin <vslugin@nntc.nnov.ru>
+WORKDIR /srv
+
+ENV DEBIAN_FRONTEND noninteractive
+ENV TZ Europe/Moscow
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+RUN apt-get update \
+	&& apt-get install -y nano mariadb-client
+
+CMD /bin/bash -c "while true;do echo 'alive...';sleep 30s;done"

@@ -1,0 +1,26 @@
+version: '3.9'
+
+services:
+  db:
+    image: mariadb:10.6
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3306:3306"
+    networks:
+      - infrastructure
+
+  phpmyadmin:
+    image: phpmyadmin
+    restart: always
+    ports:
+      - "8080:80"
+    environment:
+      - PMA_ARBITRARY=1
+    networks:
+      - infrastructure
+
+networks:
+  infrastructure:
+    name: infrastructure
