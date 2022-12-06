@@ -8,8 +8,6 @@ services:
       MYSQL_ROOT_PASSWORD: root
     ports:
       - "3306:3306"
-    networks:
-      - infrastructure
 
   phpmyadmin:
     image: phpmyadmin
@@ -18,8 +16,14 @@ services:
       - "8080:80"
     environment:
       - PMA_ARBITRARY=1
-    networks:
-      - infrastructure
 
-networks:
-  infrastructure:
+  srv:
+    build: ./server
+    restart: always
+    hostname: srv
+    environment:
+      QWE: "rty123"
+    ports:
+      - "8888:80"
+    volumes:
+      - ../app:/srv
