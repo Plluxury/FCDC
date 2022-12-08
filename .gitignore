@@ -2,4 +2,4 @@
 /app/records.txt
 /app/cleard_records.txt
 /app/Very_cleared_records.txt
-
+/infrastructure/server/get-pip.py

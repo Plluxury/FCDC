@@ -1,4 +1,0 @@
-1670486658.7670383
-[Empty DataFrame
-Columns: [xmin, ymin, xmax, ymax, confidence, class, name]
-Index: []]
