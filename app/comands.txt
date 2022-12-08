@@ -1,0 +1,5 @@
+1)Python
+apt-get install python3-distutils
+apt-get install python3-apt
+2)Pip
+python3 get-pip.py

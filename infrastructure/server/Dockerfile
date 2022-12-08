@@ -8,7 +8,8 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 RUN apt-get update \
 	&& apt-get install -y nano mariadb-client
-
+RUN apt-get update
+RUN apt-get install ffmpeg libsm6 libxext6  -y
 # for production
 #COPY app/* /srv/
 
