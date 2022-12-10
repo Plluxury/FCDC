@@ -26,4 +26,5 @@ services:
     ports:
       - "8888:80"
     volumes:
-      - ../app:/srv
+      - ../input:/mnt/input
+    command: /bin/bash -c "/usr/bin/python3 /srv/fcdc.py"

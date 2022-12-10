@@ -1,5 +1,4 @@
 .idea
-/app/records.txt
-/app/cleard_records.txt
-/app/Very_cleared_records.txt
-/infrastructure/server/get-pip.py
+/infrastructure/server/app/records.txt
+/infrastructure/server/app/cleard_records.txt
+/infrastructure/server/app/Very_cleared_records.txt
