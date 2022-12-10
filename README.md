@@ -36,11 +36,18 @@ STEP1 - Drop database and create new database
 
 ```bash
 $ cd infrastructure # if not yet
+$ docker-compose stop srv
 $ docker-compose exec db /bin/bash -c "echo \"DROP DATABASE fcdc;\" | mysql -uroot -proot"
 $ docker-compose exec db /bin/bash -c "echo \"CREATE DATABASE fcdc;\" | mysql -uroot -proot"
 ```
 
 STEP2 - Restart srv container only
+
+```bash
+$ docker-compose start srv
+```
+
+
 
 # Working
 
