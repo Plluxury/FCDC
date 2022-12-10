@@ -6,8 +6,8 @@ from pyzbar.pyzbar import decode
 import sqlite3
 import mysql.connector as mariadb
 # создание бд
-mariadb_connection = mariadb.connect(user='db1', password='db1', host='db',
-                                     port='3306', database='db1')
+mariadb_connection = mariadb.connect(user='fcdc', password='fcdc', host='db',
+                                     port='3306', database='fcdc')
 cursor = mariadb_connection.cursor()
 
 
@@ -324,5 +324,5 @@ class MugDetection:
 
 
 # Create a new object and execute.
-detector = MugDetection(capture_index='vid.mp4', model_name='best.pt')
+detector = MugDetection(capture_index='/mnt/input/video.mp4', model_name='/mnt/input/model.pt')
 detector()
