@@ -27,4 +27,4 @@ services:
       - "8888:80"
     volumes:
       - ../input:/mnt/input
-    command: /bin/bash -c "/usr/bin/python3 /srv/fcdc.py"
+#    command: /bin/bash -c "/usr/bin/python3 /srv/fcdc.py"

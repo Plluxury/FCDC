@@ -5,13 +5,13 @@ import time
 from pyzbar.pyzbar import decode
 import sqlite3
 import mysql.connector as mariadb
-# создание бд
+# connect db
 mariadb_connection = mariadb.connect(user='fcdc', password='fcdc', host='db',
                                      port='3306', database='fcdc')
 cursor = mariadb_connection.cursor()
 
-
-cursor.execute('''CREATE TABLE meta_data (
+# create table
+cursor.execute('''CREATE TABLE IF NOT EXISTS meta_data (
     id int AUTO_INCREMENT PRIMARY KEY,
     state1 varchar(255),
     `time` varchar(255),
@@ -42,7 +42,7 @@ class MugDetection:
         self.classes = self.model.names
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         print("Using Device: ", self.device)
-
+# read video
     def get_video_capture(self):
         """
         Creates a new video streaming object to extract video frame by frame to make prediction on.
@@ -50,7 +50,7 @@ class MugDetection:
         """
 
         return cv2.VideoCapture(self.capture_index)
-
+# load prepared model
     def load_model(self, model_name):
         """
         Loads Yolo5 model from pytorch hub.
@@ -62,7 +62,7 @@ class MugDetection:
         else:
             model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
         return model
-
+# convert frame to array
     def score_frame(self, frame):
         """
         Takes a single frame as input, and scores the frame using yolo5 model.
@@ -74,7 +74,7 @@ class MugDetection:
         results = self.model(frame)
         labels, cord = results.xyxyn[0][:, -1], results.xyxyn[0][:, :-1]
         return labels, cord
-
+# class to label
     def class_to_label(self, x):
         """
         For a given label value, return corresponding string label.
@@ -82,7 +82,7 @@ class MugDetection:
         :return: corresponding string label
         """
         return self.classes[int(x)]
-
+# draw boxes
     def plot_boxes(self, results, frame):
         """
         Takes a frame and its results as input, and plots the bounding boxes and label on to the frame.
@@ -105,7 +105,7 @@ class MugDetection:
                             cv2.FONT_HERSHEY_SIMPLEX, 0.9, bgr, 2)
 
         return frame
-
+#main func
     def __call__(self):
         done_barcodes = []
         is_bar_end = []
@@ -115,45 +115,46 @@ class MugDetection:
         waiting_barcode = 'waiting_barcode'
         decoded = 'decoded'
         state = waiting_stream
-        colvo_frames = 0
-        # дописать sql request и добавить в них время
+        amount_of_frames = 0
 
         # Get video
         cap = self.get_video_capture()
 
         # for infinity decode frames
         while True:
-            colvo_frames += 1
-            # удалить
-            print(state)
-            # Check stream yes or no
+            amount_of_frames += 1
+
+            # print(state)
+
 
             # Stream on
             if state == waiting_stream and cap.isOpened():
                 state = stream_on
-                ## sql request
+            # sql request
                 sql_st = ''' INSERT INTO meta_data (state1, time) VALUES(%s, %s)'''
                 val = (state, time.time())
                 cursor.execute(sql_st, val)
                 mariadb_connection.commit()
 
 
-            # Stream off
+            #if Stream off
             if state == waiting_stream and cap.isOpened() == False:
                 print('No camera 1 ')
                 break
-                ## sql request
+                # mb need sql request
 
             # should be state == stream_on,
+
             # Info about stream
-            # stream on
+
+            #if stream on
             if state == stream_on:
                 state = waiting_barcode
                 sql_st = ''' INSERT INTO meta_data (state1, time) VALUES(%s, %s)'''
                 val = (state, time.time())
                 cursor.execute(sql_st, val)
                 mariadb_connection.commit()
-                ## sql request
+                #mb need sql request
 
             # stream was on but turn off
             if state == stream_on and cap.isOpened() == False:
@@ -162,83 +163,94 @@ class MugDetection:
                 val = (state, time.time())
                 cursor.execute(sql_st, val)
                 mariadb_connection.commit()
-                ## sql request
+                # mb need sql request
 
+            # if stream was on but video break
             if state != stream_on and cap.isOpened() == False:
                 print('No camera')
                 state = waiting_stream
+            #sql request
                 sql_st = ''' INSERT INTO meta_data (state1, time) VALUES(%s, %s)'''
                 val = (state, time.time())
                 cursor.execute(sql_st, val)
                 mariadb_connection.commit()
-                ## sql request
+
 
             # should be state == waiting_barcode, cap.isOpened() == True
 
-            # Get frame
+            # read frames from video
+            # if ret == False no more frames 
             ret, frame = cap.read()
-            # if video end
             try:
                 assert ret
             except AssertionError:
                 print('No more frames to decode')
                 break
 
-            # #this statement start work after detected barcode
-            if state == decoded:
-                y = decode(frame)
-                # Get barcode
-                if y is None and 'N' not in is_bar_end:
-                    is_bar_end.append(y)
-                if y is not None and 'N' in is_bar_end:
-                    done_barcodes.append(y)
-                    is_bar_end.clear()
-                    x = None
-                    state = waiting_barcode
-                    # sql request
-
-                # Check barcode in frame
+            # Check barcode in frame
             if state == waiting_barcode:
                 x = decode(frame)
-                # Get barcode
+            # Get barcode
                 if x is not None:
+                    x = int(x[0].data.decode('utf-8'))
+                    
+            # if order already done
                     if x in done_barcodes:
                         pass
+            # if not
                     else:
                         is_bar_end.append(x)
                         state = decoded
-                sql_st = ''' INSERT INTO meta_data (state1, time, barcode) VALUES(%s,%s,%s)'''
-                val = (state,time.time(),x[0].data.decode('utf-8'))
-                cursor.execute(sql_st,val)
-                mariadb_connection.commit()
+                        sql_st = ''' INSERT INTO meta_data (state1, time, barcode) VALUES(%s,%s,%s)'''
+                        val = ('start',time.time(),x)
+                        cursor.execute(sql_st,val)
+                        mariadb_connection.commit()
+        
+            #read stop barcode
+            if state == decoded:
+                 y = decode(frame)
+            #if y==[] start barcode end
+                 if y==[] and len(is_bar_end)!=2:
+                     is_bar_end.append('N')
+            #if y!=[] catch stop barcode
+                 if y!=[] and len(is_bar_end)==2:
+                     print(int(y[0].data.decode('utf-8')))
+                     done_barcodes.append(int(y[0].data.decode('utf-8')))
+                     state = waiting_barcode
+                     is_bar_end.clear()
+                     sql_st = ''' INSERT INTO meta_data (state1, time, barcode) VALUES(%s,%s,%s)'''
+                     val = ('stop',time.time(),int(y[0].data.decode('utf-8')))
+                     cursor.execute(sql_st,val)
+                     mariadb_connection.commit()
+                     x = None
 
             # should be state == decode, cap.isOpened() == True, x != None
 
             list_of_records = ''
             time_rec = ''
             if state == decoded:
-                # output frame
-#                frame = cv2.resize(frame, (1280, 720))
- #               results = self.score_frame(frame)
-  #              frame = self.plot_boxes(results, frame)
-   #             cv2.imshow('YOLOv5 Detection', frame)
+            # output frame useless in work
+            # frame = cv2.resize(frame, (1280, 720))
+            # results = self.score_frame(frame)
+            # frame = self.plot_boxes(results, frame)
+            # cv2.imshow('YOLOv5 Detection', frame)
 
-                # prepare data for .txt
+            # prepare data for .txt
                 im = frame
                 results1 = self.model(im)
                 record = results1.pandas().xyxy
                 time_rec = time.time()
                 list_of_records = record
 
-                # load data in .txt
-                file_of_records = open('records.txt', 'w')  # поменять на w
+            # load data in .txt
+                file_of_records = open('records.txt', 'w')  
                 file_of_records.write(str(time_rec))
                 file_of_records.write('\n')
                 file_of_records.write(str(list_of_records))
                 file_of_records.write('\n')
                 file_of_records.close()
 
-                # чистим выходной файл убираю путсые строки
+                # clear records.txt del empty array
                 infile = "records.txt"
                 outfile = "cleaned_records.txt"
                 with open(infile) as fin, open(outfile, "w+") as fout:
@@ -248,18 +260,18 @@ class MugDetection:
                             line = line.replace(line, '')
                         fout.write(line)
 
-                # составляем массив из cleaned_records
+                # make array from clenead records
                 file1 = open("cleaned_records.txt", "r")
                 s = []
                 x = []
 
                 while True:
-                    # считываем строку
+                    #read lines
                     line = file1.readline()
-                    # прерываем цикл, если строка пустая
+                    # if line empty skip 
                     if not line:
                         break
-                    # выводим строку
+                    # output line 
                     s = line.split()
                     if len(s) == 8:
                         s[7] = 'Rose'
@@ -267,7 +279,7 @@ class MugDetection:
                     if len(s) == 1:
                         x.append(s)
 
-                # убираем лишнее время и делаем строки массивами
+                # del  extra time lines
                 a = []
                 d = ''
                 for i in range(len(x) - 1):
@@ -278,17 +290,16 @@ class MugDetection:
                     if len(x[i]) == len(x[i + 1]) and len(x[i]) == 8:
                         a.append(x[i])
 
-                # записываем массивы в файл
+                # write arrays to txt
                 file_of_records = open('Very_clear_records.txt', 'w')
                 for i in a:
                     file_of_records.write(str(i))
                     file_of_records.write('\n')
-                file_of_records.close()
-                # закрываем файл
+                file_of_records.close()айл
                 file1.close()
 
-                #
-                # объединение времен с координатами
+                
+                # unite time and coords
                 appended_records = []
                 for i in range(len(a)):
                     if len(a[i]) == 1:
@@ -302,8 +313,7 @@ class MugDetection:
                         except IndexError:
                             pass
 
-
-                # sql request
+                #prepare data to sql request  
                 for i in range(len(appended_records)):
                     secs = appended_records[i][0]
                     xmin = appended_records[i][2]
@@ -311,6 +321,7 @@ class MugDetection:
                     xmax = appended_records[i][4]
                     ymax = appended_records[i][5]
                     name = appended_records[i][8]
+                    # sql request
                     sql_st = f''' INSERT INTO meta_data (state1, time, frames, xmin, ymin, xmax, 
                                                 ymax, name) VALUES(%s,%s,%s,%s,%s,%s,%s,%s)'''
                     val = (state,secs,colvo_frames,xmin,ymin,xmax,ymax,name)
@@ -324,5 +335,5 @@ class MugDetection:
 
 
 # Create a new object and execute.
-detector = MugDetection(capture_index='/mnt/input/video.mp4', model_name='/mnt/input/model.pt')
+detector = MugDetection(capture_index='/mnt/input/video2.mp4', model_name='/mnt/input/model.pt')
 detector()
