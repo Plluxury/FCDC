@@ -1,9 +1,11 @@
+#!usr/bin/python
+# -*- coding: latin-1 -*-
+
 import torch
 import numpy as np
 import cv2
 import time
 from pyzbar.pyzbar import decode
-import sqlite3
 import mysql.connector as mariadb
 # connect db
 mariadb_connection = mariadb.connect(user='fcdc', password='fcdc', host='db',
@@ -295,7 +297,7 @@ class MugDetection:
                 for i in a:
                     file_of_records.write(str(i))
                     file_of_records.write('\n')
-                file_of_records.close()айл
+                file_of_records.close()
                 file1.close()
 
                 
@@ -324,7 +326,7 @@ class MugDetection:
                     # sql request
                     sql_st = f''' INSERT INTO meta_data (state1, time, frames, xmin, ymin, xmax, 
                                                 ymax, name) VALUES(%s,%s,%s,%s,%s,%s,%s,%s)'''
-                    val = (state,secs,colvo_frames,xmin,ymin,xmax,ymax,name)
+                    val = (state,secs,amount_of_frames,xmin,ymin,xmax,ymax,name)
                     cursor.execute(sql_st,val)
                 mariadb_connection.commit()
 
